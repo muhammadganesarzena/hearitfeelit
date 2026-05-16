@@ -312,42 +312,75 @@ import noiseFile from './assets/crowd-noise.mp3';
 const musicAudio = new Audio(musicFile);
 const noiseAudio = new Audio(noiseFile);
 
+// penting untuk mobile
+musicAudio.preload = 'auto';
+noiseAudio.preload = 'auto';
+
 musicAudio.loop = true;
 noiseAudio.loop = true;
+
+// default volume
 musicAudio.volume = 0.2;
 noiseAudio.volume = 0.8;
 
-// ancActive false = Noisy Reality, true = Soundcore Focus
+// ancActive false = Noisy Reality
+// ancActive true  = Soundcore Focus
 let ancActive = false;
 let audioStarted = false;
 
-function startAudioIfNeeded() {
+// ============================================================
+// START AUDIO
+// ============================================================
+
+async function startAudioIfNeeded() {
     if (audioStarted) return;
 
-    // Pastikan volume Noisy Reality sebelum play
-    musicAudio.volume = 0.2;
-    noiseAudio.volume = 0.8;
+    try {
+        await musicAudio.play();
+        await noiseAudio.play();
 
-    const playMusic = musicAudio.play();
-    const playNoise = noiseAudio.play();
-    if (playMusic !== undefined) playMusic.catch(err => console.warn('[Soundcore] Music blocked:', err));
-    if (playNoise !== undefined) playNoise.catch(err => console.warn('[Soundcore] Noise blocked:', err));
+        // force sync
+        musicAudio.currentTime = 0;
+        noiseAudio.currentTime = 0;
 
-    audioStarted = true;
+        audioStarted = true;
+
+        console.log('[Soundcore] Audio started');
+    } catch (err) {
+        console.warn('[Soundcore] Audio blocked:', err);
+    }
 }
+
+// ============================================================
+// SAFE FADE FUNCTION (MOBILE FIX)
+// ============================================================
 
 function fadeAudio(audioEl, targetVolume, durationMs) {
-    const steps = 40;
-    const intervalMs = durationMs / steps;
     const startVolume = audioEl.volume;
-    const delta = (targetVolume - startVolume) / steps;
-    let step = 0;
-    const timer = setInterval(() => {
-        step++;
-        audioEl.volume = Math.min(1, Math.max(0, startVolume + delta * step));
-        if (step >= steps) clearInterval(timer);
-    }, intervalMs);
+    const volumeDiff = targetVolume - startVolume;
+
+    const startTime = performance.now();
+
+    function animate(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / durationMs, 1);
+
+        audioEl.volume = Math.max(
+            0,
+            Math.min(1, startVolume + volumeDiff * progress)
+        );
+
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        }
+    }
+
+    requestAnimationFrame(animate);
 }
+
+// ============================================================
+// UI STATES
+// ============================================================
 
 function applyNoisyRealityUI() {
     const ring    = document.getElementById('anc-ring');
@@ -356,22 +389,64 @@ function applyNoisyRealityUI() {
     const listOff = document.getElementById('list-off');
     const listOn  = document.getElementById('list-on');
     const btn     = document.getElementById('anc-btn');
+
     if (!ring) return;
 
-    ring.classList.remove('border-sky-500', 'bg-sky-500/10', 'shadow-[0_0_40px_rgba(14,165,233,0.3)]');
-    ring.classList.add('border-gray-700', 'bg-white/5');
+    ring.classList.remove(
+        'border-sky-500',
+        'bg-sky-500/10',
+        'shadow-[0_0_40px_rgba(14,165,233,0.3)]'
+    );
+
+    ring.classList.add(
+        'border-gray-700',
+        'bg-white/5'
+    );
+
     icon.setAttribute('data-lucide', 'eye-off');
+
     icon.classList.remove('text-sky-400');
     icon.classList.add('text-gray-500');
+
     waves.classList.add('opacity-0');
     waves.classList.remove('opacity-100');
-    listOff.classList.add('scale-105', 'ring-1', 'ring-white/20');
-    listOff.classList.remove('opacity-30', 'scale-95');
-    listOn.classList.add('opacity-30', 'scale-95');
-    listOn.classList.remove('bg-sky-500/10', 'border-sky-500/30', 'scale-105', 'ring-1', 'ring-sky-500/20');
+
+    listOff.classList.add(
+        'scale-105',
+        'ring-1',
+        'ring-white/20'
+    );
+
+    listOff.classList.remove(
+        'opacity-30',
+        'scale-95'
+    );
+
+    listOn.classList.add(
+        'opacity-30',
+        'scale-95'
+    );
+
+    listOn.classList.remove(
+        'bg-sky-500/10',
+        'border-sky-500/30',
+        'scale-105',
+        'ring-1',
+        'ring-sky-500/20'
+    );
+
     btn.innerText = 'SIMULATE SILENCE';
-    btn.classList.remove('bg-sky-500', 'text-white');
-    btn.classList.add('bg-white', 'text-[#030712]');
+
+    btn.classList.remove(
+        'bg-sky-500',
+        'text-white'
+    );
+
+    btn.classList.add(
+        'bg-white',
+        'text-[#030712]'
+    );
+
     lucide.createIcons();
 }
 
@@ -382,58 +457,102 @@ function applySoundcoreFocusUI() {
     const listOff = document.getElementById('list-off');
     const listOn  = document.getElementById('list-on');
     const btn     = document.getElementById('anc-btn');
+
     if (!ring) return;
 
-    ring.classList.add('border-sky-500', 'bg-sky-500/10', 'shadow-[0_0_40px_rgba(14,165,233,0.3)]');
-    ring.classList.remove('border-gray-700', 'bg-white/5');
+    ring.classList.add(
+        'border-sky-500',
+        'bg-sky-500/10',
+        'shadow-[0_0_40px_rgba(14,165,233,0.3)]'
+    );
+
+    ring.classList.remove(
+        'border-gray-700',
+        'bg-white/5'
+    );
+
     icon.setAttribute('data-lucide', 'eye');
+
     icon.classList.add('text-sky-400');
     icon.classList.remove('text-gray-500');
+
     waves.classList.remove('opacity-0');
     waves.classList.add('opacity-100');
-    listOff.classList.remove('scale-105', 'ring-1', 'ring-white/20');
-    listOff.classList.add('opacity-30', 'scale-95');
-    listOn.classList.remove('opacity-30', 'scale-95');
-    listOn.classList.add('bg-sky-500/10', 'border-sky-500/30', 'scale-105', 'ring-1', 'ring-sky-500/20');
+
+    listOff.classList.remove(
+        'scale-105',
+        'ring-1',
+        'ring-white/20'
+    );
+
+    listOff.classList.add(
+        'opacity-30',
+        'scale-95'
+    );
+
+    listOn.classList.remove(
+        'opacity-30',
+        'scale-95'
+    );
+
+    listOn.classList.add(
+        'bg-sky-500/10',
+        'border-sky-500/30',
+        'scale-105',
+        'ring-1',
+        'ring-sky-500/20'
+    );
+
     btn.innerText = 'RESTORE REALITY';
-    btn.classList.add('bg-sky-500', 'text-white');
-    btn.classList.remove('bg-white', 'text-[#030712]');
+
+    btn.classList.add(
+        'bg-sky-500',
+        'text-white'
+    );
+
+    btn.classList.remove(
+        'bg-white',
+        'text-[#030712]'
+    );
+
     lucide.createIcons();
 }
 
-function toggleAnc() {
-    const isFirstClick = !audioStarted;
-    startAudioIfNeeded();
+// ============================================================
+// TOGGLE ANC
+// ============================================================
 
-    if (isFirstClick) {
-        // Klik pertama: tampilkan Noisy Reality dulu (audio sudah jalan noise 80%)
-        // lalu 800ms kemudian auto-switch ke Soundcore Focus
-        ancActive = false;
-        applyNoisyRealityUI();
+async function toggleAnc() {
 
-        setTimeout(() => {
-            ancActive = true;
-            applySoundcoreFocusUI();
-            fadeAudio(noiseAudio, 0, 1200);
-            fadeAudio(musicAudio, 0.9, 800);
-        }, 800);
+    // start audio pertama kali
+    await startAudioIfNeeded();
 
-        return;
-    }
-
-    // Toggle normal
     ancActive = !ancActive;
 
     if (ancActive) {
-        fadeAudio(noiseAudio, 0, 1200);
-        fadeAudio(musicAudio, 0.9, 800);
+
+        // SOUNDCORE FOCUS
+        fadeAudio(noiseAudio, 0.0, 1000);
+        fadeAudio(musicAudio, 1.0, 1000);
+
         applySoundcoreFocusUI();
+
+        console.log('[Soundcore] Focus ON');
+
     } else {
-        fadeAudio(noiseAudio, 0.8, 1200);
-        fadeAudio(musicAudio, 0.2, 800);
+
+        // NOISY REALITY
+        fadeAudio(noiseAudio, 0.8, 1000);
+        fadeAudio(musicAudio, 0.2, 1000);
+
         applyNoisyRealityUI();
+
+        console.log('[Soundcore] Focus OFF');
     }
 }
+
+// expose
+window.toggleAnc = toggleAnc;
 
 // ============================================================
 // --- NAVBAR LOGIC ---
