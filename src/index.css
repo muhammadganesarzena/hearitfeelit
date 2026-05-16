@@ -37,3 +37,50 @@
 .hero-glow-2 {
   background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
 }
+
+/* ============================================================
+   NAVBAR
+   ============================================================ */
+
+/* Base nav link */
+.nav-link {
+  @apply relative px-4 py-2 text-sm font-semibold text-gray-400 rounded-xl
+         hover:text-white transition-colors duration-200 tracking-wide;
+}
+
+/* Active state */
+.nav-link.active {
+  @apply text-white;
+}
+
+.nav-link.active::after {
+  content: '';
+  @apply absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-sky-500 rounded-full;
+}
+
+/* Scrolled state — glassmorphism background */
+#navbar.scrolled {
+  @apply border-b border-white/5;
+  background: rgba(3, 7, 18, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Mobile nav links */
+.mobile-nav-link {
+  @apply flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-semibold
+         text-gray-400 hover:text-white hover:bg-white/5 transition-all duration-200;
+}
+
+/* Hamburger open state */
+#hamburger.open .hamburger-line:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+#hamburger.open .hamburger-line:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+#hamburger.open .hamburger-line:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
+  width: 20px;
+}
